@@ -1,3 +1,7 @@
 .GMap__Wrapper {
   height: 100%!important;
 }
+
+.mx-datepicker {
+  width: 100%!important;
+}

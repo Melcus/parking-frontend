@@ -1,29 +1,29 @@
 <template>
   <div
-    class="absolute rounded-md top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 w-full max-w-5xl bg-white py-8"
+    class="absolute rounded-md lg:top-1/4 left-1/2 transform -translate-x-1/2 lg:-translate-y-1/2 p-4 w-full h-full lg:h-auto max-w-5xl bg-white py-8"
     v-if="garage && Object.keys(garage).length">
 
-    <div class="flex pb-6">
-      <div class="w-5/6">{{ garage.name }}</div>
-      <div class="w-1/6 text-right cursor-pointer hover:text-blue-600" @click="close()">x</div>
+    <div class="flex pb-6 pt-10 lg:pt-0 items-center">
+      <div class="w-5/6 text-4xl tracking-tight font-extrabold text-gray-700">{{ garage.name }}</div>
+      <div class="w-1/6 text-right cursor-pointer hover:text-blue-600 text-4xl text-gray-500" @click="close()">x</div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <hr>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-6">
       <div>
         <label for="from" class="block text-sm font-medium text-gray-700">From</label>
         <div class="mt-1">
-          <input type="text" name="from" id="from" v-model="filters.start"
-                 class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                 placeholder="date">
+          <date-picker id="from" v-model="filters.start" :show-second="false" :minute-step="15" type="datetime"
+                       class="w-full"></date-picker>
         </div>
       </div>
 
       <div>
         <label for="to" class="block text-sm font-medium text-gray-700">To</label>
         <div class="mt-1">
-          <input type="text" name="to" id="to" v-model="filters.end"
-                 class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                 placeholder="date">
+          <date-picker id="to" v-model="filters.end" :show-second="false" :minute-step="15" type="datetime"
+                       class="w-full"></date-picker>
         </div>
       </div>
 
@@ -49,7 +49,7 @@
         <div class="grid grid-cols-3 gap-3 mt-2">
           <div v-for="(size, index) in sizes" :key="index"
                @click="filters.size = size.name"
-               class="p-6 bg-gray-100 flex flex-col justify-center items-center cursor-pointer border-2 border-gray-300"
+               class="p-6 bg-gray-50 flex flex-col justify-center items-center cursor-pointer rounded border-gray-300"
                :class="{'bg-gray-300' : filters.size === size.name}"
           >
             <p class="text-gray-700 text-lg font-bold">{{ ucFirst(size.name) }}</p>
@@ -58,52 +58,96 @@
         </div>
       </div>
     </div>
-
-
-   <hr>
-
-    <div v-if="showSpotsSection" class="grid mt-8" :class="[hasAvailableSpots ? 'grid-cols-2' : 'grid-cols-1']">
+    <hr>
+    <div v-if="showSpotsSection" class="grid mt-8">
       <div :class="{'text-center' : !hasAvailableSpots}">
-        <template v-if="hasAvailableSpots">
-         <span class="text-xl text-green-500 font-bold">{{ this.spots.length }} available spots</span>
-        </template>
-        <template v-else>
-          <span class="text-red-500 text-xl text-center">No available spots matching current filters</span>
-        </template>
+        <div v-if="hasAvailableSpots" class="grid grid-cols-2">
+          <div class="text-xl text-green-500 font-bold flex items-center">
+            {{ this.spots.length }} available spots
+          </div>
+          <div>
+            <template v-if="selectedSpot">
+              <div class="text-gray-500 mr-4 flex justify-between">
+                <span>Selected spot</span>
+                <span
+                  v-text="manualSpotSelection ? 'close' : 'Change spot'"
+                  v-if="hasAvailableSpots && this.spots.length > 1" class="cursor-pointer text-gray-500 font-bold"
+                  @click="manualSpotSelection = !manualSpotSelection">
+               </span>
+              </div>
+              <div>
+                <div>
+                  Floor :
+                  <span class="text-lg leading-6 font-medium text-gray-900">{{ this.selectedSpot.floor }}</span>
+                  Number :
+                  <span class="text-lg leading-6 font-medium text-gray-900">{{ this.selectedSpot.number }}</span>
+                </div>
+                <div>
+                  Options :  <span class="mr-2" v-for="attribute in this.selectedSpot.attributes">{{ ucFirst(attribute) }}</span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div v-else class="text-center">
+          <span class="text-red-500 text-xl">No available spots matching current filters</span>
+        </div>
       </div>
-      <div
-        v-text="manualSpotSelection ? 'close' : 'Change spot'"
-        v-if="hasAvailableSpots" class="cursor-pointer text-right text-gray-500" @click="manualSpotSelection = !manualSpotSelection">
 
-      </div>
-
-      <div class="" v-if="manualSpotSelection">
-        <div v-for="spot in spots" class="mt-2">
-          {{ spot }}
+      <div class="grid grid-cols-3 gap-6 mt-6" v-if="manualSpotSelection">
+        <div v-for="spot in sortedSpots" class="bg-gray-100 p-3 cursor-pointer rounded-lg text-gray-500" @click="selectSpot(spot)" v-if="selectedSpot.id !== spot.id">
+          <div>
+           <div class="flex justify-around" >
+             <p>
+               <span>Floor</span>
+               <span class="text-lg leading-6 font-medium text-gray-600">{{ spot.floor }}</span>
+             </p>
+             <p>
+               <span>Spot no.</span>
+               <span class="text-lg leading-6 font-medium text-gray-600">{{ spot.number }}</span>
+             </p>
+           </div>
+            <p v-if="spot.attributes.length" class="text-center">
+              <span class="mr-2 italic" v-for="attribute in spot.attributes">{{ ucFirst(attribute) }}</span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="mt-6">
-      {{ filters }}
+    <div class="mt-6 grid grid-cols-2" v-if="selectedSpot">
+      <div class="text-center">
+        <p v-if="price" class="text-4xl tracking-tight font-extrabold text-gray-700">{{ (price / 100).toLocaleString("en-US", {style:"currency", currency:"USD"}) }}</p>
+      </div>
+      <div class="text-center">
+        <button type="button"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+          Continue to payment
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import DatePicker from 'vue2-datepicker';
+
 export default {
+  components: {DatePicker},
   data() {
     return {
-      manualSpotSelection : false,
+      selectedSpot: null,
+      price: 0,
+      manualSpotSelection: false,
       attributes: [],
       sizes: [],
       filters: {
         size: '',
-        start: '2021-06-26T20:19:27.866114Z',
-        end: '2021-06-27T20:19:27.866114Z',
+        start: '',
+        end: '',
         attributes: []
       },
-      spots : []
+      spots: []
     }
   },
   props: {
@@ -127,6 +171,17 @@ export default {
         }
       }
     },
+    async selectedSpot(newValue, oldValue) {
+      if (newValue && Object.keys(newValue).length) {
+        // create reservation
+        const {data} = await this.$axios.post(`${process.env.API_URL}/reservations`, {
+          'start': this.filters.start.toISOString(),
+          'end': this.filters.end.toISOString(),
+          'spot_id': newValue.id
+        })
+        await this.getReservationPrice(data.data.id)
+      }
+    },
     filters: {
       handler(val) {
         if (!this.canFilterSpots) {
@@ -138,15 +193,20 @@ export default {
       deep: true
     }
   },
-  computed : {
+  computed: {
     hasAvailableSpots() {
       return this.spots.length > 0
     },
     showSpotsSection() {
-      return this.filters.start.length && this.filters.end.length
+      return typeof this.filters.start === 'object'
+        && typeof this.filters.end === 'object'
+        && this.filters.size.length
     },
     canFilterSpots() {
       return this.showSpotsSection
+    },
+    sortedSpots() {
+      return this.spots.sort((a, b) => parseFloat(a.floor) - parseFloat(b.floor) || parseFloat(a.number) - parseFloat(b.number));
     }
   },
   methods: {
@@ -160,17 +220,37 @@ export default {
       this.sizes = data.data.sizes
     },
     async filterSpots() {
+      this.selectSpot(null)
       const {data} = await this.$axios.get(`${process.env.API_URL}/garages/${this.garage.id}/spots?${this.buildFilterUrl()}`)
       this.spots = data.data
+      if (this.spots.length) {
+        this.selectRandomSpot()
+      }
+    },
+    async getReservationPrice(reservationId) {
+      const {data} = await this.$axios.post(`${process.env.API_URL}/calculate-payment`, {
+        reservation_id : reservationId
+      })
+      this.price = data
+    },
+    selectSpot(spot) {
+      this.selectedSpot = spot
+      this.price = 0
+      this.manualSpotSelection = false
+    },
+    selectRandomSpot() {
+      this.selectedSpot = this.spots[Math.floor(Math.random() * this.spots.length)];
     },
     buildFilterUrl() {
       const searchParams = new URLSearchParams();
       for (const [key, value] of Object.entries(this.removeEmptyAttributes(this.filters))) {
-        if (value instanceof Array) {
+        if (key === 'attributes') {
           value.forEach((entry) => {
             searchParams.append(`${key}[]`, entry)
           });
-        } else {
+        } else if (['start', 'end'].includes(key)) {
+          searchParams.append(key, value.toISOString())
+        } else if (key === 'size') {
           searchParams.append(key, value)
         }
       }
@@ -181,7 +261,7 @@ export default {
       return firstLetter.toUpperCase() + str.substr(1);
     },
     removeEmptyAttributes(obj) {
-      return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null && v.length ));
+      return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null && (v.length || typeof v === 'object')));
     }
   }
 }
