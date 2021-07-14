@@ -1,6 +1,6 @@
 <template>
   <div
-    class="absolute rounded-md lg:top-1/4 left-1/2 transform -translate-x-1/2 lg:-translate-y-1/2 p-4 w-full h-full lg:h-auto max-w-5xl bg-white py-8"
+    class="absolute rounded-md lg:top-1/4 left-1/2 transform -translate-x-1/2  p-4 w-full h-full lg:h-auto max-w-5xl bg-white py-8"
     v-if="garage && Object.keys(garage).length">
 
     <div class="flex pb-6 pt-10 lg:pt-0 items-center">
@@ -94,10 +94,10 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-6 mt-6" v-if="manualSpotSelection">
-        <div v-for="spot in sortedSpots" class="bg-gray-100 p-3 cursor-pointer rounded-lg text-gray-500" @click="selectSpot(spot)" v-if="selectedSpot.id !== spot.id">
-          <div>
-           <div class="flex justify-around" >
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-6 mt-6" v-if="manualSpotSelection">
+        <div v-for="spot in sortedSpots" class="shadow-md p-3 cursor-pointer rounded-lg text-gray-500" @click="selectSpot(spot)" v-if="selectedSpot.id !== spot.id">
+          <div class="grid grid-cols-2">
+           <div class="" >
              <p>
                <span>Floor</span>
                <span class="text-lg leading-6 font-medium text-gray-600">{{ spot.floor }}</span>
@@ -107,8 +107,11 @@
                <span class="text-lg leading-6 font-medium text-gray-600">{{ spot.number }}</span>
              </p>
            </div>
-            <p v-if="spot.attributes.length" class="text-center">
-              <span class="mr-2 italic" v-for="attribute in spot.attributes">{{ ucFirst(attribute) }}</span>
+            <p v-if="spot.attributes.length" class="flex flex-col space-y-2">
+              <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800" v-for="attribute in spot.attributes">{{ ucFirst(attribute) }}</span>
+            </p>
+            <p v-else class="mt-2 text-center">
+              No special options
             </p>
           </div>
         </div>
