@@ -124,6 +124,7 @@
       </div>
       <div class="text-center">
         <button type="button"
+                @click="issueCheckoutUrl()"
                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
           Continue to payment
         </button>
@@ -143,6 +144,7 @@ export default {
       price: 0,
       manualSpotSelection: false,
       attributes: [],
+      reservationId: null,
       sizes: [],
       filters: {
         size: '',
@@ -182,6 +184,7 @@ export default {
           'end': this.filters.end.toISOString(),
           'spot_id': newValue.id
         })
+        this.reservationId = data.data.id
         await this.getReservationPrice(data.data.id)
       }
     },
@@ -243,6 +246,11 @@ export default {
     },
     selectRandomSpot() {
       this.selectedSpot = this.spots[Math.floor(Math.random() * this.spots.length)];
+    },
+    async issueCheckoutUrl() {
+      const {data} = await this.$axios.get(`${process.env.API_URL}/checkout/${this.reservationId}`)
+      window.location.replace(data.url);
+      // console.log('checkout url', data)
     },
     buildFilterUrl() {
       const searchParams = new URLSearchParams();

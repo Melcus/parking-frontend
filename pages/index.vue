@@ -33,6 +33,7 @@ import GarageModal from "../components/GarageModal";
 import AppMenu from "@/components/AppMenu";
 
 export default {
+  middleware: 'auth',
   components: {
     'garage-modal': GarageModal,
     'app-menu': AppMenu
